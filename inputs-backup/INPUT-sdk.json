@@ -1,0 +1,22 @@
+{
+    "algolia": {
+        "appId": "R7KOJZJG1V",
+        "indexName": "prod_APIFY_HELP"
+    },
+    "crawlerName": "sdkCrawler",
+    "startUrls": [
+        { "url": "https://sdk.apify.com/docs/api/apify" }
+    ],
+    "pseudoUrls": [
+        {
+            "purl": "https://sdk.apify.com/docs/[.*]"
+        }
+    ],
+    "selectors": {
+        "title": "title",
+        "text": "article"
+    },
+    "additionalPageAttrs": {
+        "type": "sdk"
+    }
+}

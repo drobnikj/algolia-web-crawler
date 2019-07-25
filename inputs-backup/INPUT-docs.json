@@ -1,0 +1,19 @@
+{
+    "algolia": {
+        "appId": "R7KOJZJG1V",
+        "indexName": "prod_APIFY_HELP"
+    },
+    "crawlerName": "docsCrawler",
+    "startUrls": [
+        { "url": "https://apify.com/docs/" }
+    ],
+    "selectors": {
+        "title": "h1",
+        "text": "[data-selectable-paragraph]"
+    },
+    "additionalPageAttrs": {
+        "type": "docs"
+    },
+    "clickableElements": ".docs-menu a",
+    "someHashParam": true
+}

@@ -1,0 +1,19 @@
+{
+    "algolia": {
+        "appId": "R7KOJZJG1V",
+        "indexName": "prod_APIFY_HELP"
+    },
+    "crawlerName": "blogCrawler",
+    "startUrls": [
+        { "url": "https://blog.apify.com/" }
+    ],
+    "selectors": {
+        "title": "h1",
+        "text": "[data-selectable-paragraph]"
+    },
+    "clickableElements": "a[data-post-id]",
+    "additionalPageAttrs": {
+        "type": "blog"
+    },
+    "omitSearchParamsFromUrl": true
+}
