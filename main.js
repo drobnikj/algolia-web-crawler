@@ -87,7 +87,7 @@ const extractHashTitles = async (page, request) => {
 };
 
 Apify.main(async () => {
-    const { algolia, selectors, additionalPageAttrs,
+    const { algolia, startUrls, selectors, additionalPageAttrs,
         omitSearchParamsFromUrl, clickableElements,
         keepUrlFragment, someHashParam, pseudoUrls = [], crawlerName } = await Apify.getInput();
 
