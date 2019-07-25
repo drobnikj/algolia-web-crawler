@@ -8,7 +8,7 @@
         { "url": "https://blog.apify.com/" }
     ],
     "selectors": {
-        "title": "h1",
+        "title": "title",
         "text": "[data-selectable-paragraph]"
     },
     "clickableElements": "a[data-post-id]",

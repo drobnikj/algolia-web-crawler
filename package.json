@@ -10,7 +10,7 @@
 	},
 	"devDependencies": {},
 	"scripts": {
-		"start": "node main.js",
+		"start": "node ./src/main.js",
 		"test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1"
 	},
 	"author": "It's not you it's me",
