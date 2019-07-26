@@ -1,9 +1,23 @@
 const Apify = require('apify');
 const Promise = require('bluebird');
+const fs = require('fs');
+const vm = require('vm');
+const path = require('path');
 
-const extractTextForSelectors = async (page, selectors) => {
-    const result = {};
-    const pageFunction = (selectors) => {
+/**
+ * This is default pageFunction. It can be overriden using pageFunction on input.
+ * It can return single object or array of object which will be save to index.
+ * @param page - Reference to the Puppeteer Page
+ * @param request - Apify.Request object
+ * @param selectors - Selectors from input.selectors
+ * @param Apify - Reference to the Apify SDK
+ */
+const defaultPageFunction = async ({ page, request, selectors, Apify }) => {
+    const result = {
+        url: request.url,
+        '#debug': Apify.utils.createRequestDebugInfo(request),
+    };
+    const getSelectorsHTMLContent = (selectors) => {
         const result = {};
         Object.keys(selectors).forEach((key) => {
             const selector = selectors[key];
@@ -12,9 +26,9 @@ const extractTextForSelectors = async (page, selectors) => {
         });
         return result;
     };
-    const pageFunctionResults = await page.evaluate(pageFunction, selectors);
-    Object.keys(pageFunctionResults).forEach((key) => {
-        result[key] = Apify.utils.htmlToText(pageFunctionResults[key]).substring(0, 9500);
+    const selectorsHTML = await page.evaluate(getSelectorsHTMLContent, selectors);
+    Object.keys(selectorsHTML).forEach((key) => {
+        result[key] = Apify.utils.htmlToText(selectorsHTML[key]).substring(0, 9500);
     });
     return result;
 };
@@ -26,52 +40,28 @@ const omitSearchParams = (req) => {
     return req;
 };
 
-const extractHashTitles = async (page, request) => {
-    const { url } = request;
-    let results = await page.evaluate((url) => {
-        const results = [];
-        const h1 = $('h1').eq(0);
-        const h1html = h1.html();
-        const h1TextHtml = h1.next().html();
-        results.push({ url, title: h1html, text: h1TextHtml });
-
-        const h2s = $('h2');
-
-        h2s.each(function() {
-            const sectionId = $(this).parent().attr('id') || $(this).attr('id');
-            results.push({
-                url: `${url}#${sectionId}`,
-                title: [h1html, $(this).html()].join(' - '),
-                text:  $(this).siblings().map(function() {return $(this).html()}).toArray().join(' '),
-            });
-        });
-
-        return results;
-    }, url);
-
-    results = results.map((item) => {
-        Object.keys(item).forEach((key) => {
-            item[key] = Apify.utils.htmlToText(item[key]).substring(0, 9500);
-        });
-        return item;
-    });
-
-    return results;
-};
-
 const setUpCrawler = async (input) => {
     const { startUrls, selectors, additionalPageAttrs,
-        omitSearchParamsFromUrl, clickableElements,
+        omitSearchParamsFromUrl, clickableElements, pageFunction,
         keepUrlFragment, someHashParam, pseudoUrls = [], crawlerName } = input;
 
     const requestQueue = await Apify.openRequestQueue();
     await Promise.map(startUrls, request => requestQueue.addRequest(request), { concurrency: 3 });
 
     if (pseudoUrls.length === 0) {
-        startUrls.forEach(request => pseudoUrls.push({ purl:`${request.url}[.*]` }));
+        startUrls.forEach(request => pseudoUrls.push({ purl: `${request.url}[.*]` }));
     }
     const pseudoUrlsUpdated = pseudoUrls.map(request => new Apify.PseudoUrl(request.purl));
     console.log(pseudoUrlsUpdated)
+
+    // NOTE: This is for local runs purposes.
+    // You can override pageFunction with file pageFunction in same dir.
+    let localPageFunction = require('./page_function.js');
+    if (!pageFunction && fs.existsSync(path.join(__dirname, 'page_function.js'))) {
+        console.log('Using local pageFunction!');
+        localPageFunction = require('./page_function.js');
+    }
+
     const crawler = new Apify.PuppeteerCrawler({
         requestQueue,
         launchPuppeteerOptions: {
@@ -81,33 +71,30 @@ const setUpCrawler = async (input) => {
             console.log(`Processing ${request.url}`);
             await Apify.utils.puppeteer.injectJQuery(page);
 
-            if (someHashParam) {
-                const results = await extractHashTitles(page, request);
-                for (const result of results) {
-                    const isResultValid = !Object.keys(selectors).some(key => !result[key]);
-                    if (isResultValid) {
-                        await Apify.pushData({
-                            crawledBy: crawlerName,
-                            ...result,
-                            ...additionalPageAttrs,
-                            '#debug': Apify.utils.createRequestDebugInfo(request),
-                        });
-                    }
-                }
+            // Get results from the page
+            let results;
+            const pageFunctionContext = { page, request, selectors, Apify };
+            if (pageFunction) {
+                results = await vm.runInThisContext(pageFunction)(pageFunctionContext);
+            } else if (localPageFunction) {
+                results = await localPageFunction(pageFunctionContext);
             } else {
-                const results = await extractTextForSelectors(page, selectors);
-                const isResultValid = !Object.keys(selectors).some(key => !results[key]);
-                if (isResultValid) {
-                    await Apify.pushData({
-                        url: request.url,
-                        crawledBy: crawlerName,
-                        ...results,
-                        ...additionalPageAttrs,
-                        '#debug': Apify.utils.createRequestDebugInfo(request),
-                    });
-                }
+                results = await defaultPageFunction(pageFunctionContext);
             }
 
+            // Validate results and push to dataset
+            const type = typeof results;
+            if (type !== 'object') {
+                throw new Error(`Page function must return Object or Array, it returned ${type}.`);
+            }
+            if (!Array.isArray(results)) results = [results];
+            const cleanResults = results.filter((result) => {
+                const isResultValid = result.url && !Object.keys(selectors).some(key => !result[key]);
+                return isResultValid;
+            });
+            await Apify.pushData(cleanResults);
+
+            // Enqueue following links
             const enqueueLinksOpts = {
                 page,
                 selector: clickableElements || 'a',

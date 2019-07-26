@@ -7,7 +7,7 @@ const { setUpCrawler } = require('./crawler');
 
 Apify.main(async () => {
     const input = await Apify.getInput();
-    const { algolia, crawlerName } = input;
+    const { algolia, skipIndexUpdate, crawlerName } = input;
 
     const algoliaApiKey = algolia.apiKey || process.env.ALGOLIA_API_KEY;
     const algoliaClient = algoliasearch(algolia.appId, algoliaApiKey);
@@ -46,5 +46,6 @@ Apify.main(async () => {
     });
 
     await Apify.setValue('OUTPUT', pagesDiff);
-    await algoliaIndex.update(algoliaSearchIndex, pagesDiff);
+
+    if (!skipIndexUpdate) await algoliaIndex.update(algoliaSearchIndex, pagesDiff);
 });
