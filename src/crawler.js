@@ -56,7 +56,7 @@ const setUpCrawler = async (input) => {
 
     // NOTE: This is for local runs purposes.
     // You can override pageFunction with file pageFunction in same dir.
-    let localPageFunction = require('./page_function.js');
+    let localPageFunction;
     if (!pageFunction && fs.existsSync(path.join(__dirname, 'page_function.js'))) {
         console.log('Using local pageFunction!');
         localPageFunction = require('./page_function.js');
