@@ -91,7 +91,13 @@ const setUpCrawler = async (input) => {
             const cleanResults = results.filter((result) => {
                 const isResultValid = result.url && !Object.keys(selectors).some(key => !result[key]);
                 return isResultValid;
+            }).map((result) => {
+                return {
+                    ...result,
+                    ...additionalPageAttrs
+                }
             });
+
             await Apify.pushData(cleanResults);
 
             // Enqueue following links
