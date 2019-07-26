@@ -94,7 +94,8 @@ const setUpCrawler = async (input) => {
             }).map((result) => {
                 return {
                     ...result,
-                    ...additionalPageAttrs
+                    ...additionalPageAttrs,
+                    crawledBy: crawlerName,
                 }
             });
 
