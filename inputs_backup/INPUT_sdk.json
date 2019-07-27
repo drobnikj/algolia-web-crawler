@@ -18,5 +18,6 @@
     },
     "additionalPageAttrs": {
         "type": "sdk"
-    }
+    },
+    "skipIndexUpdate": true
 }

@@ -13,6 +13,10 @@ const path = require('path');
  * @param Apify - Reference to the Apify SDK
  */
 const defaultPageFunction = async ({ page, request, selectors, Apify }) => {
+    // Wait some time to ensure whole content is loaded.
+    // TODO: Find better way to ensure content was loaded
+    await page.waitFor(5000);
+
     const result = {
         url: request.url,
         '#debug': Apify.utils.createRequestDebugInfo(request),

@@ -15,5 +15,5 @@
         "type": "docs"
     },
     "clickableElements": ".docs-menu a",
-    "someHashParam": true
+    "skipIndexUpdate": true
 }
