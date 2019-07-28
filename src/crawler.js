@@ -93,7 +93,9 @@ const setUpCrawler = async (input) => {
             }
             if (!Array.isArray(results)) results = [results];
             const cleanResults = results.filter((result) => {
-                const isResultValid = result.url && !Object.keys(selectors).some(key => !result[key]);
+                // TODO: Better way! maybe new param required atts?
+                const isAllSelectorsIncluded = selectors ? !Object.keys(selectors).some(key => !result[key]) : true;
+                const isResultValid = result.url && isAllSelectorsIncluded;
                 return isResultValid;
             }).map((result) => {
                 return {

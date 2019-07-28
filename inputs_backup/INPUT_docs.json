@@ -7,10 +7,6 @@
     "startUrls": [
         { "url": "https://apify.com/docs/" }
     ],
-    "selectors": {
-        "title": "h1",
-        "text": "[data-selectable-paragraph]"
-    },
     "additionalPageAttrs": {
         "type": "docs"
     },

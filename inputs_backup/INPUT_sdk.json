@@ -13,7 +13,7 @@
         }
     ],
     "selectors": {
-        "title": "title",
+        "title": "h1.postHeaderTitle",
         "text": "article"
     },
     "additionalPageAttrs": {
