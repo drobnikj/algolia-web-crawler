@@ -5,7 +5,7 @@ const vm = require('vm');
 const path = require('path');
 
 /**
- * This is default pageFunction. It can be overriden using pageFunction on input.
+ * This is default pageFunction. It can be overridden using pageFunction on input.
  * It can return single object or array of object which will be save to index.
  * @param page - Reference to the Puppeteer Page
  * @param request - Apify.Request object
@@ -13,10 +13,6 @@ const path = require('path');
  * @param Apify - Reference to the Apify SDK
  */
 const defaultPageFunction = async ({ page, request, selectors, Apify }) => {
-    // Wait some time to ensure whole content is loaded.
-    // TODO: Find better way to ensure content was loaded
-    await page.waitFor(5000);
-
     const result = {
         url: request.url,
         '#debug': Apify.utils.createRequestDebugInfo(request),
@@ -45,9 +41,17 @@ const omitSearchParams = (req) => {
 };
 
 const setUpCrawler = async (input) => {
-    const { startUrls, selectors, additionalPageAttrs,
+    const { startUrls, additionalPageAttrs,
         omitSearchParamsFromUrl, clickableElements, pageFunction,
-        keepUrlFragment, someHashParam, pseudoUrls = [], crawlerName } = input;
+        keepUrlFragment, waitForElement, pseudoUrls = [], crawlerName } = input;
+
+    // Transform selectors into key-value object
+    let selectors = {};
+    if (Array.isArray(input.selectors)) {
+        input.selectors.forEach(selector => (selectors[selector.key] = selector.value))
+    } else {
+        selectors = input.selectors;
+    }
 
     const requestQueue = await Apify.openRequestQueue();
     await Promise.map(startUrls, request => requestQueue.addRequest(request), { concurrency: 3 });
@@ -56,7 +60,7 @@ const setUpCrawler = async (input) => {
         startUrls.forEach(request => pseudoUrls.push({ purl: `${request.url}[.*]` }));
     }
     const pseudoUrlsUpdated = pseudoUrls.map(request => new Apify.PseudoUrl(request.purl));
-    console.log(pseudoUrlsUpdated)
+    console.log(pseudoUrlsUpdated);
 
     // NOTE: This is for local runs purposes.
     // You can override pageFunction with file pageFunction in same dir.
@@ -68,12 +72,12 @@ const setUpCrawler = async (input) => {
 
     const crawler = new Apify.PuppeteerCrawler({
         requestQueue,
-        launchPuppeteerOptions: {
-            // headless: true,
-        },
         handlePageFunction: async ({ request, page }) => {
             console.log(`Processing ${request.url}`);
             await Apify.utils.puppeteer.injectJQuery(page);
+
+            // Wait for element if needed
+            if (waitForElement) await page.waitForSelector(waitForElement);
 
             // Get results from the page
             let results;

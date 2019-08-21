@@ -1,17 +1,15 @@
 const Apify = require('apify');
 const _ = require('underscore');
-const Promise = require('bluebird');
 const algoliasearch = require('algoliasearch');
 const algoliaIndex = require('./algolia_index');
 const { setUpCrawler } = require('./crawler');
 
 Apify.main(async () => {
     const input = await Apify.getInput();
-    const { algolia, skipIndexUpdate, crawlerName } = input;
+    const { algoliaAppId, algoliaIndexName, algoliaApiKey, skipIndexUpdate, crawlerName } = input;
 
-    const algoliaApiKey = algolia.apiKey || process.env.ALGOLIA_API_KEY;
-    const algoliaClient = algoliasearch(algolia.appId, algoliaApiKey);
-    const algoliaSearchIndex = algoliaClient.initIndex(algolia.indexName);
+    const algoliaClient = algoliasearch(algoliaAppId, algoliaApiKey);
+    const algoliaSearchIndex = algoliaClient.initIndex(algoliaIndexName);
 
     const crawler = await setUpCrawler(input);
     await crawler.run();
