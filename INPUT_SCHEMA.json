@@ -45,8 +45,8 @@
       "description": "Pick selectors, which text content you want to index. Key is name of attribute and value is CSS selector.",
       "prefill": [
         {
-          "title": "h1",
-          "textContent": "body"
+          "key": "h1",
+          "value": "body"
         }
       ],
       "editor": "keyValue"
@@ -61,7 +61,9 @@
       "title": "Additional attributes",
       "type": "object",
       "description": "Pick additional attributes you want to attach to each record in index.",
-      "editor": "json"
+      "editor": "json",
+      "prefill": {},
+      "default": {}
     },
     "skipIndexUpdate": {
       "title": "Skip Index Updated",
