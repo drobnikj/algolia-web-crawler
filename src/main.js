@@ -28,20 +28,22 @@ Apify.main(async () => {
         pagesToRemove: pagesIndexByUrl,
     };
 
-    // TODO: Pagination
-    const datasetResult = await dataset.getData({ clean: true });
-    datasetResult.items.forEach((page) => {
-        const { url } = page;
-        if (pagesIndexByUrl[url]) {
-            pagesDiff.pagesToUpdate[url] = {
-                ...page,
-                objectID: pagesIndexByUrl[url].objectID,
-            };
-        } else {
-            pagesDiff.pagesToAdd[url] = page;
-        }
-        delete pagesDiff.pagesToRemove[url];
-    });
+    const limit = 10000;
+    for (let offset = 0;offset < datasetInfo.itemCount; offset += limit) {
+        const datasetResult = await dataset.getData({ clean: true, offset, limit });
+        datasetResult.items.forEach((page) => {
+            const { url } = page;
+            if (pagesIndexByUrl[url]) {
+                pagesDiff.pagesToUpdate[url] = {
+                    ...page,
+                    objectID: pagesIndexByUrl[url].objectID,
+                };
+            } else {
+                pagesDiff.pagesToAdd[url] = page;
+            }
+            delete pagesDiff.pagesToRemove[url];
+        });
+    }
 
     await Apify.setValue('OUTPUT', pagesDiff);
 
